@@ -26,8 +26,6 @@ class Podcast:
         except IndexError:
             self.valid = False
 
-    def download(self):
-            subprocess.Popen("wget -c %s" % (podcast.enclosureUrl), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def __str__(self):
         return "Podcast(title=%s)" % (self.title)
@@ -35,9 +33,14 @@ class Podcast:
 class Channel:
     def __init__(self, url, podsdir=None):
         self.url = url
-        parse()
-        self.poddir = os.path.join(self.podsdir, self.title)
-        self.logfile = os.path.join(poddir,"podcasts.log")
+        self.parse()
+        self.poddir = os.path.join(podsdir, self.title)
+        self.logfile = os.path.join(self.poddir,"podcasts.log")
+        try:
+            os.mkdir(self.poddir)
+        except OSError:
+            pass
+        os.chdir(self.poddir)
 
     def parse(self):
         dom = minidom.parse(urllib.urlopen("http://" + url))
@@ -66,16 +69,15 @@ class Channel:
         fd.close()
         return result
 
+    def download(self, podcast):
+            subprocess.Popen("wget -c %s" % (podcast.enclosureUrl), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.add_to_log(podcast)
+
 podsdir = os.path.join(os.getenv("HOME"),"Podcasts")
 
 rssfile = open("rss.conf", "r")
 for url in rssfile:
-    channel = Channel(url)
-    try:
-        os.mkdir(poddir)
-    except OSError:
-        pass
-    os.chdir(poddir)
+    channel = Channel(url, podsdir)
     for item in channel.get_items():
         podcast = Podcast()
         podcast.fillFromItem(item)
@@ -84,8 +86,7 @@ for url in rssfile:
             print "Title: %s\nLink: %s" % (podcast.title, podcast.link)
             action = int(raw_input("Choose an action for this podcast (1. Download, 2. Skip, 3. Abort): "))
             if action == 1:
-                podcast.download()
-                channel.add_to_log(podcast)
+                channel.download()
             elif action == 2:
                 channel.add_to_log(podcast)
             else:
