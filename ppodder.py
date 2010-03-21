@@ -43,7 +43,7 @@ class Channel:
         os.chdir(self.poddir)
 
     def parse(self):
-        dom = minidom.parse(urllib.urlopen("http://" + url))
+        dom = minidom.parse(urllib.urlopen("http://" + self.url))
         try:
             self.node = dom.getElementsByTagName('channel')[0]
             self.title = self.node.getElementsByTagName('title')[0].firstChild.data
@@ -59,7 +59,10 @@ class Channel:
         podsstore.close()
 
     def is_downloaded(self, podcast):
-        fd = open(self.logfile, "r+")
+        if os.path.exists(self.logfile):
+            fd = open(self.logfile, "r")
+        else:
+            return False
         result = False
         line = podcast.enclosureUrl
         for raw in fd:
@@ -89,7 +92,7 @@ for url in rssfile:
             print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
             action = int(raw_input("Choose an action for this podcast (1. Download, 2. Skip, 3. Skip All 4. Abort): "))
             if action == 1:
-                channel.download()
+                channel.download(podcast)
             elif action == 2:
                 channel.add_to_log(podcast)
             elif action == 3:
@@ -97,4 +100,5 @@ for url in rssfile:
                 channel.add_to_log(podcast)
                 continue
             else:
+                rssfile.close()
                 exit()
