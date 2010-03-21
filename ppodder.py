@@ -81,6 +81,7 @@ podsdir = os.path.join(os.getenv("HOME"),"Podcasts")
 rssfile = open("rss.conf", "r")
 for url in rssfile:
     skip_all = False
+    download_all = False
     channel = Channel(url, podsdir)
     for item in channel.get_items():
         podcast = Podcast()
@@ -88,14 +89,21 @@ for url in rssfile:
         if skip_all:
             channel.add_to_log(podcast)
             continue
+        if download_all:
+            channel.download_all(podcast)
+            continue
         if not channel.is_downloaded(podcast) and podcast.valid:
             print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
-            action = int(raw_input("Choose an action for this podcast (1. Download, 2. Skip, 3. Skip All 4. Abort): "))
+            action = int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
             if action == 1:
                 channel.download(podcast)
             elif action == 2:
-                channel.add_to_log(podcast)
+                download_all = True
+                channel.download(podcast)
+                continue
             elif action == 3:
+                channel.add_to_log(podcast)
+            elif action == 4:
                 skip_all = True
                 channel.add_to_log(podcast)
                 continue
