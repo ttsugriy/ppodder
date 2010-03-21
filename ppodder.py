@@ -54,9 +54,10 @@ class Channel:
         return self.node.getElementsByTagName("item")
 
     def add_to_log(self, podcast):
-        podsstore = open(self.logfile, "a+")
-        podsstore.write(podcast.enclosureUrl + "\n")
-        podsstore.close()
+        if podcast.enclosureUrl != None and podcast.enclosureUrl != "":
+            podsstore = open(self.logfile, "a+")
+            podsstore.write(podcast.enclosureUrl + "\n")
+            podsstore.close()
 
     def is_downloaded(self, podcast):
         if os.path.exists(self.logfile):
@@ -83,6 +84,11 @@ for url in rssfile:
     skip_all = False
     download_all = False
     channel = Channel(url, podsdir)
+    try:
+        items = channel.get_items()
+    except AttributeError:
+        print "Problems with %s channel!" % (url)
+        continue
     for item in channel.get_items():
         podcast = Podcast()
         podcast.fillFromItem(item)
