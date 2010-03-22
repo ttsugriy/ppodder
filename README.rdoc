@@ -8,6 +8,7 @@ ppodder designed to be as platform independent as possible to keep required tool
 
 * wget (best download manager ever)
 * python
+* bash shell (needed only for "&&" and "echo", so basically any modern shell will be fine)
 
 So if you're running almost any Linux distro you should be good to go. In case you use other OS I'm sure it wouldn't be much of a problem to find and install these dependencies.
 
