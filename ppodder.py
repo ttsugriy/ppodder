@@ -5,9 +5,9 @@ import urllib
 from xml.dom import minidom
 import subprocess
 
-
 class Podcast:
-    def __init__(self, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
+    def __init__(self, channel=None, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
+        self.channel = channel
         self.title = title
         self.description = description
         self.link = link
@@ -25,7 +25,6 @@ class Podcast:
             self.valid = True
         except IndexError:
             self.valid = False
-
 
     def __str__(self):
         return "Podcast(title=%s)" % (self.title)
@@ -53,15 +52,31 @@ class Channel:
     def get_items(self):
         return self.node.getElementsByTagName("item")
 
-    def add_to_log(self, podcast):
+
+class PodcastManager:
+    def __init__( self, podslist="rss.conf", home=os.path.join(os.getenv("HOME"), "Podcasts") ):
+        self.podslist = podslist
+        self.home = home
+
+    def __add_to_store(self, podcast):
         if podcast.enclosureUrl != None and podcast.enclosureUrl != "":
-            podsstore = open(self.logfile, "a+")
-            podsstore.write(podcast.enclosureUrl + "\n")
-            podsstore.close()
+            podcast.channel.podsstore = open(self.logfile, "a+")
+            podcast.channel.podsstore.write(podcast.enclosureUrl + "\n")
+            podcast.channel.podsstore.close()
+
+    def add_to_downloaded(self, podcast):
+        self.__add_to_store(podcast)
+
+    def add_to_skipped(self, podcast):
+        self.__add_to_store(podcast)
+
+    def download(self, podcast):
+        subprocess.Popen("wget -c %s" % (podcast.enclosureUrl), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.add_to_downloaded(podcast)
 
     def is_downloaded(self, podcast):
-        if os.path.exists(self.logfile):
-            fd = open(self.logfile, "r")
+        if os.path.exists(podcast.channel.logfile):
+            fd = open(podcast.channel.logfile, "r")
         else:
             return False
         result = False
@@ -73,46 +88,51 @@ class Channel:
         fd.close()
         return result
 
-    def download(self, podcast):
-            subprocess.Popen("wget -c %s" % (podcast.enclosureUrl), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.add_to_log(podcast)
-
-podsdir = os.path.join(os.getenv("HOME"),"Podcasts")
-
-rssfile = open("rss.conf", "r")
-for url in rssfile:
-    skip_all = False
-    download_all = False
-    channel = Channel(url, podsdir)
-    try:
-        items = channel.get_items()
-    except AttributeError:
-        print "Problems with %s channel!" % (url)
-        continue
-    for item in channel.get_items():
-        podcast = Podcast()
-        podcast.fillFromItem(item)
-        if skip_all:
-            channel.add_to_log(podcast)
-            continue
-        if download_all:
-            channel.download_all(podcast)
-            continue
-        if not channel.is_downloaded(podcast) and podcast.valid:
-            print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
-            action = int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
-            if action == 1:
-                channel.download(podcast)
-            elif action == 2:
-                download_all = True
-                channel.download(podcast)
+    def check_channel( self, channel ):
+        skip_all = False
+        download_all = False
+        try:
+            items = channel.get_items()
+        except AttributeError:
+            print "Problems with %s channel!" % (url)
+            return
+        for item in channel.get_items():
+            podcast = Podcast(channel)
+            podcast.fillFromItem(item)
+            if skip_all:
+                self.add_to_skipped(podcast)
                 continue
-            elif action == 3:
-                channel.add_to_log(podcast)
-            elif action == 4:
-                skip_all = True
-                channel.add_to_log(podcast)
+            if download_all:
+                self.download(podcast)
                 continue
-            else:
-                rssfile.close()
-                exit()
+            if not self.is_downloaded(podcast) and podcast.valid:
+                action = self.prompt_for_action(podcast)
+                if action == 1:
+                    self.download(podcast)
+                elif action == 2:
+                    download_all = True
+                    self.download(podcast)
+                    continue
+                elif action == 3:
+                    self.add_to_skipped(podcast)
+                elif action == 4:
+                    skip_all = True
+                    self.add_to_skipped(podcast)
+                    continue
+                else:
+                    exit()
+
+    def prompt_for_action(self,podcast):
+        print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
+        action = int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
+
+    def check_all_channels(self):
+        podsfd = open(self.podslist, "r")
+        for url in podsfd:
+            channel = Channel(url, self.home)
+            self.check_channel(channel)
+        podsfd.close()
+    
+if __name__ == "__main__":
+    manager = PodcastManager()
+    manager.check_all_channels()
