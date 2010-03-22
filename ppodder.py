@@ -21,6 +21,9 @@ class Podcast:
     def __get_element_data(self, node, elem_name):
         return node.getElementsByTagName(elem_name)[0].firstChild.data
 
+    def __str__(self):
+        return "Podcast \"%s\"" % (self.title)
+
 class Channel:
     def __init__(self, url, podsdir=None):
         self.url = url
@@ -44,6 +47,8 @@ class Channel:
     def get_items(self):
         return self.node.getElementsByTagName("item")
 
+    def __str__(self):
+        return "Channel \"%s\"" % (self.title)
 
 class PodcastManager:
     def __init__( self, podslist="rss.conf", home=os.path.join(os.getenv("HOME"), "Podcasts") ):
@@ -121,8 +126,8 @@ class PodcastManager:
     def check_all_channels(self):
         podsfd = open(self.podslist, "r")
         for url in podsfd:
-            print "Checking for new episodes in %s channel" % (url)
             channel = Channel(url, self.home)
+            print "Checking for new episodes in %s" % (channel)
             self.check_channel(channel)
         podsfd.close()
     
