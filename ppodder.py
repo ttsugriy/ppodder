@@ -91,7 +91,6 @@ class PodcastManager:
         return result
 
     def check_channel( self, channel ):
-        print "Checking for new episodes in %s channel" % (channel.url)
         skip_all = False
         download_all = False
         try:
@@ -132,6 +131,7 @@ class PodcastManager:
     def check_all_channels(self):
         podsfd = open(self.podslist, "r")
         for url in podsfd:
+            print "Checking for new episodes in %s channel" % (url)
             channel = Channel(url, self.home)
             self.check_channel(channel)
         podsfd.close()
