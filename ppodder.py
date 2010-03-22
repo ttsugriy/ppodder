@@ -17,17 +17,19 @@ class Podcast:
 
     def fillFromItem(self, item):
         try:
-            self.title = item.getElementsByTagName('title')[0].firstChild.data
-            self.description = item.getElementsByTagName('description')[0].firstChild.data
-            self.link = item.getElementsByTagName('link')[0].firstChild.data
+            self.title = self.__get_element_data(item, 'title')
+            tag_names = ['title','description','link','pubDate']
+            self.title, self.description, self.link, self.pubDate = map(lambda x: self.__get_element_data(item, x), tag_names)
             self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
-            self.pubDate = item.getElementsByTagName('pubDate')[0].firstChild.data
             self.valid = True
         except IndexError:
             self.valid = False
 
     def __str__(self):
         return "Podcast(title=%s)" % (self.title)
+
+    def __get_element_data(self, node, elem_name):
+        return node.getElementsByTagName(elem_name)[0].firstChild.data
 
 class Channel:
     def __init__(self, url, podsdir=None):
@@ -60,9 +62,9 @@ class PodcastManager:
 
     def __add_to_store(self, podcast):
         if podcast.enclosureUrl != None and podcast.enclosureUrl != "":
-            podcast.channel.podsstore = open(self.logfile, "a+")
-            podcast.channel.podsstore.write(podcast.enclosureUrl + "\n")
-            podcast.channel.podsstore.close()
+            podsstore = open(podcast.channel.logfile, "a+")
+            podsstore.write(podcast.enclosureUrl + "\n")
+            podsstore.close()
 
     def add_to_downloaded(self, podcast):
         self.__add_to_store(podcast)
@@ -124,7 +126,7 @@ class PodcastManager:
 
     def prompt_for_action(self,podcast):
         print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
-        action = int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
+        return int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
 
     def check_all_channels(self):
         podsfd = open(self.podslist, "r")
