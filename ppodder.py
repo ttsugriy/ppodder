@@ -13,14 +13,11 @@ class Podcast:
         try:
             tag_names = ['title','description','link','pubDate']
             for tag_name in tag_names:
-                setattr(self, tag_name, self.__get_element_data(item, tag_name))
+                setattr(self, tag_name, item.getElementsByTagName(tag_name)[0].firstChild.data)
             self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             self.valid = True
         except IndexError:
             self.valid = False
-
-    def __get_element_data(self, node, elem_name):
-        return node.getElementsByTagName(elem_name)[0].firstChild.data
 
     def __str__(self):
         return "Podcast \"%s\"" % (self.title)
