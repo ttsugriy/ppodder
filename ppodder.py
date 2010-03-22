@@ -20,7 +20,7 @@ class Podcast:
             self.valid = False
 
     def __str__(self):
-        return "Podcast \"%s\"" % (self.title)
+        return "Podcast \"{title}\"".format(title=self.title)
 
 class Channel:
     def __init__(self, url, podsdir=None):
@@ -65,7 +65,7 @@ class PodcastManager:
 
     def download(self, podcast):
         filename = podcast.enclosureUrl.split('/')[-1]
-        subprocess.Popen("cd {incomplete_downloads} && wget -c {episode_url} -O {filename} && mv {filename} {channel_home} && echo {episode_url} >> {logfile}".format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(unicode("mkdir -p \"{incomplete_downloads}\" && cd \"{incomplete_downloads}\" && wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
