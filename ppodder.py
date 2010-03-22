@@ -12,7 +12,8 @@ class Podcast:
     def fillFromItem(self, item):
         try:
             tag_names = ['title','description','link','pubDate']
-            self.title, self.description, self.link, self.pubDate = map(lambda x: self.__get_element_data(item, x), tag_names)
+            for tag_name in tag_names:
+                setattr(self, tag_name, __get_element_data(item, tag_name))
             self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             self.valid = True
         except IndexError:
