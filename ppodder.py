@@ -42,7 +42,7 @@ class Channel:
         os.chdir(self.poddir)
 
     def parse(self):
-        dom = minidom.parse(urllib.urlopen("http://" + self.url))
+        dom = minidom.parse(urllib.urlopen(self.url))
         try:
             self.node = dom.getElementsByTagName('channel')[0]
             self.title = self.node.getElementsByTagName('title')[0].firstChild.data
