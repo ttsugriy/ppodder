@@ -54,22 +54,20 @@ class PodcastManager:
     def __init__( self, podslist="rss.conf", home=os.path.join(os.getenv("HOME"), "Podcasts") ):
         self.podslist = podslist
         self.home = home
+        self.incomplete_downloads = os.path.join(home,"incomplete downlods")
 
     def __add_to_store(self, podcast):
         if podcast.enclosureUrl != None and podcast.enclosureUrl != "":
             podsstore = open(podcast.channel.logfile, "a+")
-            podsstore.write(podcast.enclosureUrl + "\n")
+            podsstore.write(podcast.enclosureUrl + os.linesep)
             podsstore.close()
-
-    def add_to_downloaded(self, podcast):
-        self.__add_to_store(podcast)
 
     def add_to_skipped(self, podcast):
         self.__add_to_store(podcast)
 
     def download(self, podcast):
-        subprocess.Popen("wget -c %s" % (podcast.enclosureUrl), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.add_to_downloaded(podcast)
+        filename = podcast.enclosureUrl.split('/')[-1]
+        subprocess.Popen("cd {incomplete_downloads} && wget -c {episode_url} -O {filename} && mv {filename} {channel_home} && echo {episode_url} >> {logfile}".format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
