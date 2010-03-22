@@ -13,7 +13,7 @@ class Podcast:
         try:
             tag_names = ['title','description','link','pubDate']
             for tag_name in tag_names:
-                setattr(self, tag_name, __get_element_data(item, tag_name))
+                setattr(self, tag_name, self.__get_element_data(item, tag_name))
             self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             self.valid = True
         except IndexError:
