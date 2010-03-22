@@ -127,5 +127,4 @@ class PodcastManager:
         podsfd.close()
     
 if __name__ == "__main__":
-    manager = PodcastManager()
-    manager.check_all_channels()
+    PodcastManager().check_all_channels()
