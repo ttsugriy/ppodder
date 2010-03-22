@@ -11,6 +11,14 @@ ppodder designed to be as platform independent as possible to keep required tool
 
 So if you're running almost any Linux distro you should be good to go. In case you use other OS I'm sure it wouldn't be much of a problem to find and install these dependencies.
 
+= Installation
+
+Install all dependencies listed in "Requirements" section.
+Download and drop script (and optionally rss.conf file with podcasts I watch) into desired folder.
+By default podcasts will be stored in you home directory in Podcasts folder.
+Every episode is stored under it's own folder (which name will be formed as a title of the channel).
+List of downloaded and skipped podcasts are stored in podcasts.log file, so you can safely delete this file in case you want to be prompted for actions for episodes in this channel again. Every channel has its own independent log file.
+
 = Usage
 
 Drop url of your favourite podcast into rss.conf file
