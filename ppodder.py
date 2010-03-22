@@ -7,26 +7,16 @@ import subprocess
 
 class Podcast:
     def __init__(self, channel=None, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
-        self.channel = channel
-        self.title = title
-        self.description = description
-        self.link = link
-        self.pubDate = pubDate
-        self.enclosureUrl = enclosureUrl
-        self.valid = valid
+        self.channel, self.title, self.description, self.link, self.pubDate, self.enclosureUrl, self.valid = (channel, title, description, link, pubDate, enclosureUrl, valid)
 
     def fillFromItem(self, item):
         try:
-            self.title = self.__get_element_data(item, 'title')
             tag_names = ['title','description','link','pubDate']
             self.title, self.description, self.link, self.pubDate = map(lambda x: self.__get_element_data(item, x), tag_names)
             self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             self.valid = True
         except IndexError:
             self.valid = False
-
-    def __str__(self):
-        return "Podcast(title=%s)" % (self.title)
 
     def __get_element_data(self, node, elem_name):
         return node.getElementsByTagName(elem_name)[0].firstChild.data
