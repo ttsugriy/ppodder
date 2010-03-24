@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-import urllib
+import urllib2
 from xml.dom import minidom
 import subprocess
 
@@ -35,7 +35,7 @@ class Channel:
         os.chdir(self.poddir)
 
     def parse(self):
-        dom = minidom.parse(urllib.urlopen(self.url))
+        dom = minidom.parse(urllib2.urlopen(self.url))
         try:
             self.node = dom.getElementsByTagName('channel')[0]
             self.title = self.node.getElementsByTagName('title')[0].firstChild.data
@@ -65,7 +65,7 @@ class PodcastManager:
 
     def download(self, podcast):
         filename = podcast.enclosureUrl.split('/')[-1]
-        subprocess.Popen(unicode("mkdir -p \"{incomplete_downloads}\" && cd \"{incomplete_downloads}\" && wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE)
+        subprocess.Popen(unicode("mkdir -p \"{incomplete_downloads}\" && cd \"{incomplete_downloads}\" && wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
