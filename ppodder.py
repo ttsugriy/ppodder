@@ -87,7 +87,7 @@ class PodcastManager:
         try:
             items = channel.get_items()
         except AttributeError:
-            print "Problems with %s channel!" % (url)
+            print "Problems with {channel}!".format(channel=channel)
             return
         for item in channel.get_items():
             podcast = Podcast(channel)
