@@ -1,7 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import os
-import urllib2
+import urllib.request
 from xml.dom import minidom
 import subprocess
 import datetime
@@ -30,18 +30,18 @@ class Channel:
         self.poddir = os.path.join(podsdir, self.title)
         self.logfile = os.path.join(self.poddir,"podcasts.log")
         try:
-            os.mkdir(self.poddir)
+            os.makedirs(self.poddir, exist_ok=True)
         except OSError:
             pass
         os.chdir(self.poddir)
 
     def parse(self):
-        dom = minidom.parse(urllib2.urlopen(self.url))
+        dom = minidom.parse(urllib.request.urlopen(self.url))
         try:
             self.node = dom.getElementsByTagName('channel')[0]
             self.title = self.node.getElementsByTagName('title')[0].firstChild.data
         except IndexError:
-            self.title = url.replace("/","_")
+            self.title = self.url.replace("/","_")
 
     def get_items(self):
         return self.node.getElementsByTagName("item")
@@ -73,10 +73,10 @@ class PodcastManager:
             return
         try:
             os.mkdir(self.incomplete_downloads)
-        except OSError:
             pass
         subcommand = unicode("wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile)
         subprocess.call(subcommand, cwd=self.incomplete_downloads, shell=True)
+        except OSError:
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
@@ -98,7 +98,7 @@ class PodcastManager:
         try:
             items = channel.get_items()
         except AttributeError:
-            print "Problems with {channel}!".format(channel=channel)
+            print("Problems with {channel}!".format(channel=channel))
             return
         for item in channel.get_items():
             podcast = Podcast(channel)
@@ -127,16 +127,16 @@ class PodcastManager:
                     exit()
 
     def prompt_for_action(self,podcast):
-        print "Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate)
-        return int(raw_input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
+        print("Title: %s\nLink: %s\nDate: %s" % (podcast.title, podcast.enclosureUrl, podcast.pubDate))
+        return int(input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
 
     def check_all_channels(self):
         podsfd = open(self.podslist, "r")
         for url in podsfd:
             channel = Channel(url, self.home)
-            print "Checking for new episodes in %s" % (channel)
+            print("Checking for new episodes in %s" % (channel))
             self.check_channel(channel)
         podsfd.close()
-    
+
 if __name__ == "__main__":
     PodcastManager().check_all_channels()
