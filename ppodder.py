@@ -4,6 +4,7 @@ import os
 import urllib.request
 from xml.dom import minidom
 import subprocess
+import datetime
 import collections
 import logging
 import argparse
@@ -29,10 +30,7 @@ class Channel:
         self.parse()
         self.poddir = os.path.join(podsdir, self.title)
         self.logfile = os.path.join(self.poddir,"podcasts.log")
-        try:
-            os.makedirs(self.poddir, exist_ok=True)
-        except OSError:
-            pass
+        os.makedirs(self.poddir, exist_ok=True)
         os.chdir(self.poddir)
 
     def parse(self):
@@ -65,8 +63,15 @@ class PodcastManager:
         self.__add_to_store(podcast)
 
     def download(self, podcast):
-        filename = podcast.enclosureUrl.split('/')[-1]
-        subprocess.Popen("mkdir -p \"{incomplete_downloads}\" && cd \"{incomplete_downloads}\" && wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"".format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        keepcharacters = (' ','.','_')
+        d = datetime.datetime.strptime(podcast.pubDate, "%a, %d %b %Y %H:%M:%S %Z").isoformat()
+        filename = ".".join([d, podcast.title, podcast.enclosureUrl.split('.')[-1]])
+        filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
+        if os.path.exists(filename):
+            return
+        os.makedirs(self.incomplete_downloads, exist_ok=True)
+        subcommand = u"wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"".format(episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile)
+        subprocess.call(subcommand, cwd=self.incomplete_downloads, shell=True)
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
