@@ -5,6 +5,8 @@ import urllib.request
 from xml.dom import minidom
 import subprocess
 import collections
+import logging
+import argparse
 
 class Podcast(collections.namedtuple("Podcast", ["channel", "title", "description", "link", "pubDate", "enclosureUrl"])):
 
@@ -17,7 +19,8 @@ class Podcast(collections.namedtuple("Podcast", ["channel", "title", "descriptio
                 attrs[tag_name] = item.getElementsByTagName(tag_name)[0].firstChild.data
             attrs["enclosureUrl"] = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             return Podcast(channel=channel, **attrs)
-        except IndexError:
+        except Exception as e:
+            logging.debug("Cannot parse a podcast from the item {!r} because of {!r}.".format(item.toprettyxml(), e))
             return None
 
 class Channel:
@@ -85,7 +88,7 @@ class PodcastManager:
         try:
             items = channel.get_items()
         except AttributeError:
-            print("Problems with {channel}!".format(channel=channel))
+            logging.warning("Cannot retrieve podcasts from {channel}!".format(channel=channel))
             return
         for item in items:
             podcast = Podcast.from_item(item, channel)
@@ -122,9 +125,14 @@ class PodcastManager:
         podsfd = open(self.podslist, "r")
         for url in podsfd:
             channel = Channel(url, self.home)
-            print("Checking for new episodes in %s" % (channel))
+            logging.info("Checking for new episodes in %s" % (channel))
             self.check_channel(channel)
         podsfd.close()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="A simple podcast manager in Python")
+    parser.add_argument("-v", "--verbose", help="Enable verbose diagnostics", action="store_true")
+    args = parser.parse_args()
+    level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=level)
     PodcastManager().check_all_channels()
