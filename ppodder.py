@@ -29,10 +29,7 @@ class Channel:
         self.parse()
         self.poddir = os.path.join(podsdir, self.title)
         self.logfile = os.path.join(self.poddir,"podcasts.log")
-        try:
-            os.makedirs(self.poddir, exist_ok=True)
-        except OSError:
-            pass
+        os.makedirs(self.poddir, exist_ok=True)
         os.chdir(self.poddir)
 
     def parse(self):
@@ -71,12 +68,9 @@ class PodcastManager:
         filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
         if os.path.exists(filename):
             return
-        try:
-            os.mkdir(self.incomplete_downloads)
-            pass
-        subcommand = unicode("wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile)
+        os.makedirs(self.incomplete_downloads, exist_ok=True)
+        subcommand = u"wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"".format(episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile)
         subprocess.call(subcommand, cwd=self.incomplete_downloads, shell=True)
-        except OSError:
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
