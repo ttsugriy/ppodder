@@ -4,23 +4,21 @@ import os
 import urllib.request
 from xml.dom import minidom
 import subprocess
+import collections
 
-class Podcast:
-    def __init__(self, channel=None, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
-        self.channel, self.title, self.description, self.link, self.pubDate, self.enclosureUrl, self.valid = (channel, title, description, link, pubDate, enclosureUrl, valid)
+class Podcast(collections.namedtuple("Podcast", ["channel", "title", "description", "link", "pubDate", "enclosureUrl"])):
 
-    def fillFromItem(self, item):
+    @staticmethod
+    def from_item(item, channel):
         try:
             tag_names = ['title','description','link','pubDate']
+            attrs = {}
             for tag_name in tag_names:
-                setattr(self, tag_name, item.getElementsByTagName(tag_name)[0].firstChild.data)
-            self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
-            self.valid = True
+                attrs[tag_name] = item.getElementsByTagName(tag_name)[0].firstChild.data
+            attrs["enclosureUrl"] = item.getElementsByTagName('enclosure')[0].getAttribute("url")
+            return Podcast(channel=channel, **attrs)
         except IndexError:
-            self.valid = False
-
-    def __str__(self):
-        return "Podcast \"{title}\"".format(title=self.title)
+            return None
 
 class Channel:
     def __init__(self, url, podsdir=None):
@@ -89,16 +87,17 @@ class PodcastManager:
         except AttributeError:
             print("Problems with {channel}!".format(channel=channel))
             return
-        for item in channel.get_items():
-            podcast = Podcast(channel)
-            podcast.fillFromItem(item)
+        for item in items:
+            podcast = Podcast.from_item(item, channel)
+            if not podcast:
+                continue
             if skip_all:
                 self.add_to_skipped(podcast)
                 continue
             if download_all:
                 self.download(podcast)
                 continue
-            if not self.is_downloaded(podcast) and podcast.valid:
+            if not self.is_downloaded(podcast):
                 action = self.prompt_for_action(podcast)
                 if action == 1:
                     self.download(podcast)
