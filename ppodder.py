@@ -5,23 +5,24 @@ import urllib.request
 from xml.dom import minidom
 import subprocess
 import datetime
+import collections
+import logging
+import argparse
 
-class Podcast:
-    def __init__(self, channel=None, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
-        self.channel, self.title, self.description, self.link, self.pubDate, self.enclosureUrl, self.valid = (channel, title, description, link, pubDate, enclosureUrl, valid)
+class Podcast(collections.namedtuple("Podcast", ["channel", "title", "description", "link", "pubDate", "enclosureUrl"])):
 
-    def fillFromItem(self, item):
+    @staticmethod
+    def from_item(item, channel):
         try:
             tag_names = ['title','description','link','pubDate']
+            attrs = {}
             for tag_name in tag_names:
-                setattr(self, tag_name, item.getElementsByTagName(tag_name)[0].firstChild.data)
-            self.enclosureUrl = item.getElementsByTagName('enclosure')[0].getAttribute("url")
-            self.valid = True
-        except IndexError:
-            self.valid = False
-
-    def __str__(self):
-        return "Podcast \"{title}\"".format(title=self.title)
+                attrs[tag_name] = item.getElementsByTagName(tag_name)[0].firstChild.data
+            attrs["enclosureUrl"] = item.getElementsByTagName('enclosure')[0].getAttribute("url")
+            return Podcast(channel=channel, **attrs)
+        except Exception as e:
+            logging.debug("Cannot parse a podcast from the item {!r} because of {!r}.".format(item.toprettyxml(), e))
+            return None
 
 class Channel:
     def __init__(self, url, podsdir=None):
@@ -92,18 +93,19 @@ class PodcastManager:
         try:
             items = channel.get_items()
         except AttributeError:
-            print("Problems with {channel}!".format(channel=channel))
+            logging.warning("Cannot retrieve podcasts from {channel}!".format(channel=channel))
             return
-        for item in channel.get_items():
-            podcast = Podcast(channel)
-            podcast.fillFromItem(item)
+        for item in items:
+            podcast = Podcast.from_item(item, channel)
+            if not podcast:
+                continue
             if skip_all:
                 self.add_to_skipped(podcast)
                 continue
             if download_all:
                 self.download(podcast)
                 continue
-            if not self.is_downloaded(podcast) and podcast.valid:
+            if not self.is_downloaded(podcast):
                 action = self.prompt_for_action(podcast)
                 if action == 1:
                     self.download(podcast)
@@ -128,9 +130,14 @@ class PodcastManager:
         podsfd = open(self.podslist, "r")
         for url in podsfd:
             channel = Channel(url, self.home)
-            print("Checking for new episodes in %s" % (channel))
+            logging.info("Checking for new episodes in %s" % (channel))
             self.check_channel(channel)
         podsfd.close()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="A simple podcast manager in Python")
+    parser.add_argument("-v", "--verbose", help="Enable verbose diagnostics", action="store_true")
+    args = parser.parse_args()
+    level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=level)
     PodcastManager().check_all_channels()
