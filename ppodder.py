@@ -4,6 +4,7 @@ import os
 import urllib2
 from xml.dom import minidom
 import subprocess
+import datetime
 
 class Podcast:
     def __init__(self, channel=None, title=None, description=None, link=None, pubDate=None, enclosureUrl=None, valid=False):
@@ -64,8 +65,18 @@ class PodcastManager:
         self.__add_to_store(podcast)
 
     def download(self, podcast):
-        filename = podcast.enclosureUrl.split('/')[-1]
-        subprocess.Popen(unicode("mkdir -p \"{incomplete_downloads}\" && cd \"{incomplete_downloads}\" && wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(incomplete_downloads=self.incomplete_downloads, episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        keepcharacters = (' ','.','_')
+        d = datetime.datetime.strptime(podcast.pubDate, "%a, %d %b %Y %H:%M:%S %Z").isoformat()
+        filename = ".".join([d, podcast.title, podcast.enclosureUrl.split('.')[-1]])
+        filename = "".join(c for c in filename if c.isalnum() or c in keepcharacters).rstrip()
+        if os.path.exists(filename):
+            return
+        try:
+            os.mkdir(self.incomplete_downloads)
+        except OSError:
+            pass
+        subcommand = unicode("wget -c \"{episode_url}\" -O \"{filename}\" && mv \"{filename}\" \"{channel_home}\" && echo \"{episode_url}\" >> \"{logfile}\"").format(episode_url=podcast.enclosureUrl, filename=filename, channel_home=podcast.channel.poddir, logfile=podcast.channel.logfile)
+        subprocess.call(subcommand, cwd=self.incomplete_downloads, shell=True)
 
     def is_downloaded(self, podcast):
         if os.path.exists(podcast.channel.logfile):
