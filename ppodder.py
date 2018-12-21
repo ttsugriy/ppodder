@@ -127,12 +127,11 @@ class PodcastManager:
         return int(input("Choose an action for this podcast (1. Download, 2. Download All, 3. Skip, 4. Skip All 5. Abort): "))
 
     def check_all_channels(self):
-        podsfd = open(self.podslist, "r")
-        for url in podsfd:
-            channel = Channel(url, self.home)
-            logging.info("Checking for new episodes in %s" % (channel))
-            self.check_channel(channel)
-        podsfd.close()
+        with open(self.podslist, "r") as channels_file:
+            for url in channels_file.readlines():
+                channel = Channel(url, self.home)
+                logging.info("Checking for new episodes in %s" % (channel))
+                self.check_channel(channel)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple podcast manager in Python")
