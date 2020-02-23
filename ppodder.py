@@ -19,7 +19,11 @@ class Podcast(collections.namedtuple("Podcast", ["channel", "title", "descriptio
             tag_names = ['title', 'description', 'link', 'pubDate']
             attrs = {}
             for tag_name in tag_names:
-                attrs[tag_name] = item.getElementsByTagName(tag_name)[0].firstChild.data
+                try:
+                    attrs[tag_name] = item.getElementsByTagName(tag_name)[0].firstChild.data
+                except AttributeError as e:
+                    logging.debug("Cannot fully parse a podcast from the item {!r} because of {!r}, on tag {}.".format(item.toprettyxml(), e, tag_name))
+                    attrs[tag_name] = "<None>"
             attrs["enclosureUrl"] = item.getElementsByTagName('enclosure')[0].getAttribute("url")
             return Podcast(channel=channel, **attrs)
         except Exception as e:
